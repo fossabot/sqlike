@@ -143,6 +143,7 @@ func (sf *StructField) ParentByTraversal(cb func(StructFielder) bool) StructFiel
 
 // Struct :
 type Struct struct {
+	typ        reflect.Type
 	tree       StructFielder
 	fields     Fields // all fields belong to this struct
 	properties Fields // available properties in sequence
@@ -287,6 +288,7 @@ func getCodec(t reflect.Type, tagName string, fmtFunc FormatFunc) *Struct {
 	}
 
 	codec := &Struct{
+		typ:        t,
 		tree:       root,
 		fields:     fields,
 		properties: make([]StructFielder, 0, len(fields)),

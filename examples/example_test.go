@@ -2,6 +2,7 @@ package examples
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"testing"
 
@@ -33,13 +34,21 @@ func TestExamples(t *testing.T) {
 		ctx = context.Background()
 	)
 
+	connURI := `root:abcd1234@tcp()/sqlike?parseTime=true&loc=UTC&charset=utf8mb4&collation=utf8mb4_general_ci`
+	db, err := sql.Open("mysql", connURI)
+	require.NoError(t, err)
+
+	client, err := sqlike.FromDB(db)
+	require.NoError(t, err)
+	testCase(ctx, t, client)
+
 	// normal connect
 	{
 		client := sqlike.MustConnect(
 			ctx,
 			"mysql",
 			options.Connect().
-				ApplyURI(`root:abcd1234@tcp()/sqlike?parseTime=true&loc=UTC&charset=utf8mb4&collation=utf8mb4_general_ci`),
+				ApplyURI(connURI),
 		)
 
 		// set timezone for UTC

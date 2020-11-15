@@ -1,9 +1,13 @@
 package reflext
 
 import (
+	"log"
 	"reflect"
 	"runtime"
 	"sync"
+	"time"
+
+	"github.com/DmitriyVTitov/size"
 )
 
 // DefaultMapper :
@@ -30,19 +34,57 @@ type FormatFunc func(string) string
 type Mapper struct {
 	mutex   sync.Mutex
 	tag     string
+	pos     []*Struct
 	cache   map[reflect.Type]*Struct
 	fmtFunc FormatFunc
 }
 
-var _ StructMapper = (*Mapper)(nil)
+var (
+	_ StructMapper = (*Mapper)(nil)
+)
+
+type janitor struct {
+	Interval time.Duration
+	max      int
+	stop     chan bool
+}
+
+func (j *janitor) Run(m *Mapper) {
+	ticker := time.NewTicker(j.Interval)
+
+	for {
+		s := size.Of(m.cache) + size.Of(m.pos)
+		log.Println(s, m.cache)
+		if s >= j.max {
+			m.mutex.Lock()
+			var x *Struct
+			x, m.pos = m.pos[0], m.pos[1:]
+			delete(m.cache, x.typ)
+			m.mutex.Unlock()
+		}
+
+		select {
+		case <-ticker.C:
+			// c.DeleteExpired()
+		case <-j.stop:
+			// ticker.Stop()
+			return
+		}
+	}
+}
 
 // NewMapperFunc :
 func NewMapperFunc(tag string, fmtFunc FormatFunc) *Mapper {
-	return &Mapper{
+	m := &Mapper{
 		cache:   make(map[reflect.Type]*Struct),
 		tag:     tag,
 		fmtFunc: fmtFunc,
 	}
+	j := new(janitor)
+	j.Interval = time.Second * 10
+	j.max = 1024 * 10
+	go j.Run(m)
+	return m
 }
 
 // CodecByType :
@@ -53,6 +95,7 @@ func (m *Mapper) CodecByType(t reflect.Type) Structer {
 	if !ok {
 		mapping = getCodec(t, m.tag, m.fmtFunc)
 		m.cache[t] = mapping
+		m.pos = append(m.pos, mapping)
 	}
 	return mapping
 }

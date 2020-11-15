@@ -3,8 +3,11 @@ package reflext
 import (
 	"reflect"
 	"testing"
+	"time"
 
+	"cloud.google.com/go/civil"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/text/language"
 )
 
 type dbStruct struct {
@@ -89,4 +92,51 @@ func TestMapper(t *testing.T) {
 		require.False(t, ok)
 	}
 
+	m := NewMapperFunc("sqlike", nil)
+	// go func() {
+	type A struct {
+		Name    string
+		Address string
+	}
+	type B struct{}
+	type C struct{}
+	type D struct{}
+	type E struct{ ID string }
+	type F struct{ ID string }
+	type G struct{ ID string }
+	type H struct{ ID string }
+	type Z struct{ ID string }
+	i := 0
+	datatypes := []interface{}{
+		time.Time{},
+		language.Malay,
+		language.English,
+		civil.DateOf(time.Now()),
+		civil.DateTime{},
+		A{},
+		B{},
+		C{},
+		D{},
+		E{},
+		F{},
+		G{},
+		H{},
+		Z{},
+	}
+
+	for {
+
+		if len(datatypes) <= i {
+			i = 0
+		}
+
+		time.Sleep(time.Second * 2)
+		typ := reflect.TypeOf(datatypes[i])
+
+		m.CodecByType(typ)
+		i++
+
+	}
+
+	// }()
 }

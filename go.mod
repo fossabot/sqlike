@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	cloud.google.com/go v0.71.0
+	github.com/DmitriyVTitov/size v1.1.0
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/brianvoe/gofakeit v3.18.0+incompatible
 	github.com/casbin/casbin/v2 v2.16.0

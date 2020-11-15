@@ -6,10 +6,35 @@ import (
 	"database/sql/driver"
 	"errors"
 	"log"
+	"reflect"
+	"strings"
 
 	sqldialect "github.com/si3nloong/sqlike/sql/dialect"
 	"github.com/si3nloong/sqlike/sqlike/options"
 )
+
+// FromDB :
+func FromDB(db *sql.DB) (*Client, error) {
+	driver := "mysql"
+	name := strings.ToLower(reflect.TypeOf(db.Driver()).String())
+	switch {
+	case strings.Contains(name, "mysql"):
+	default:
+		return nil, errors.New("sqlike: unsupported driver")
+	}
+	dialect := sqldialect.GetDialectByDriver(driver)
+	if err := db.Ping(); err != nil {
+		return nil, err
+	}
+	return newClient(
+		context.Background(),
+		driver,
+		db,
+		dialect,
+		"utf8mb4",
+		"utf8mb4_unicode_ci",
+	)
+}
 
 // Open : open connection to sql server with connection string
 func Open(ctx context.Context, driver string, opt *options.ConnectOptions) (client *Client, err error) {
